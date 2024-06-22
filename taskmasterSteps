@@ -3,10 +3,12 @@ Client :
 ------------------------
 daemon : 
 
-
-load la config
-Faire toute les commande 
-erreur si un des variable on a un rapport illogique entre elle
+startretries OK
+autostrart OK
+autorestart
+starttime 
+statuscode
+status process after killed by other terminal
 
 ------------------------
 Server:

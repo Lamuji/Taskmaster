@@ -9,3 +9,4 @@ while True:
         print("Error: Something went wrong!", flush=True)
     else:
         print("Success: Task completed successfully.", flush=True)
+

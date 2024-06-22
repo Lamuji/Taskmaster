@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   initconfig.rs                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jbettini <jbettini@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/04 01:03:01 by jbettini          #+#    #+#             */
-/*   Updated: 2024/06/06 02:40:19 by jbettini         ###   ########.fr       */
+/*   Updated: 2024/06/21 02:06:12 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ pub struct Status {
     pub state: String,
     pub start_time: Option<DateTime<Local>>,
     pub child: Option<Arc<Mutex<process::Child>>>,
+    pub pid: Option<u32>,
 }
 
 impl Status {
@@ -59,6 +60,7 @@ impl Status {
             state,
             start_time: None,
             child: None,
+            pid: None,
         }
     }
 }

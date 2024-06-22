@@ -4,23 +4,24 @@
 #     workingdir: "/tmp   "
 
 programs:
-  # test:
-  #   cmd: "./test"
-  #   numprocs: 1
-  #   umask: 033
-  #   workingdir: /home/ramzi/Desktop/Taskmaster/
-  #   autostart: true
-  #   autorestart: true
-  #   exitcodes: [0, 2]
-  #   startretries: 3
-  #   starttime: 5
-  #   stopsignal: TERM
-  #   stoptime: 10
-  #   stdout: /tmp/test.stdout
-  #   stderr: /tmp/test.stderr
-  #   env:
-  #     STARTED_BY: taskmaster
-  #     ANSWER: 42
+  test:
+    cmd: "./test"
+    args: 
+    numprocs: 1
+    umask: 035
+    workingdir: /home/ramzi/Desktop/Taskmaster/
+    autostart: false
+    autorestart: false
+    exitcodes: [0, 2]
+    startretries: 3
+    starttime: 5
+    stopsignal: TERM
+    stoptime: 10
+    stdout: /tmp/test.stdout
+    stderr: /tmp/test.stderr
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
   echo_program:
     cmd: "echo"
     args: ["Hello"]
@@ -40,21 +41,21 @@ programs:
       STARTED_BY: taskmaster
       ANSWER: 42
 
-  simple_script:
-    cmd: "python3"
-    args: ["test.py"]
-    numprocs: 3
-    umask: 044
-    workingdir: "."
-    autostart: false
-    autorestart: false
-    exitcodes: [0]
-    startretries: 3
-    starttime: 1
-    stopsignal: "TERM"
-    stoptime: 5
-    stdout: "/home/ramzi/Desktop/Taskmaster/simple_script1.stdout"
-    stderr: "tmp/simple_script.stderr"
-    env:
-      STARTED_BY: taskmaster
-      ANSWER: 42
+  # simple_script:
+  #   cmd: "python3"
+  #   args: ["test.py"]
+  #   numprocs: 2
+  #   umask: 044
+  #   workingdir: "."
+  #   autostart: false
+  #   autorestart: false
+  #   exitcodes: [0]
+  #   startretries: 3
+  #   starttime: 1
+  #   stopsignal: "TERM"
+  #   stoptime: 5
+  #   stdout: "/home/ramzi/Desktop/Taskmaster/simple_script1.stdout"
+  #   stderr: "tmp/simple_script.stderr"
+  #   env:
+  #     STARTED_BY: taskmaster
+  #     ANSWER: 42
