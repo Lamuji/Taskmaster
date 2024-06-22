@@ -4,3 +4,5 @@ simple_script.stdout
 simple_script1.stdout
 echo_program.stdout
 target
+test
+tect.c
