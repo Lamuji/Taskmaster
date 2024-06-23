@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   checker.rs                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jbettini <jbettini@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/05 22:12:50 by jbettini          #+#    #+#             */
-/*   Updated: 2024/06/06 01:29:57 by jbettini         ###   ########.fr       */
+/*   Updated: 2024/06/23 15:13:32 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ impl Schecker for String {
     fn check_autorestart(& mut self) {
         *self = self.trim().to_lowercase().to_string();
         if !(["true", "false", "unexpected"].contains(&self.as_str())) {
-            panic!("Incorrect value for autorestart: value must be true, false or unexpected");
+            panic!("Incorrect value for autorestart: value must be always, never or unexpected");
         }
     }
     fn check_stopsignal(& mut self) {

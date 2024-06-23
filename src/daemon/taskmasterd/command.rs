@@ -6,7 +6,7 @@
 /*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/26 05:06:43 by jbettini          #+#    #+#             */
-/*   Updated: 2024/06/22 15:56:17 by ramzi            ###   ########.fr       */
+/*   Updated: 2024/06/23 18:24:41 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,6 +122,17 @@ fn start_process(
                     processes_guard.insert(instance_name.clone(), status_clone.clone());
                 }
                 started = true;
+
+                // Vérifiez si le processus reste en état RUNNING pour la durée de starttime
+                thread::sleep(Duration::from_secs(starttime.into()));
+                let status_guard = status_clone.lock().unwrap();
+                if status_guard.state == "RUNNING" {
+                    eprintln!("Process {} started successfully", instance_name);
+                } else {
+                    eprintln!("Process {} failed to start within the specified starttime", instance_name);
+                    started = false;
+                }
+
                 break;
             }
 
@@ -154,10 +165,20 @@ pub fn load_config(procs: &mut Procs) {
     }
 }
 
-use std::os::unix::process::CommandExt;
+fn remove_last_suffix(s: &str) -> &str {
+    match s.rfind('_') {
+        Some(index) => &s[..index],
+        None => s,
+    }
+}
+
+
 
 fn check_process_status(procs: Arc<Mutex<Procs>>) {
+    let mut retry_counts: HashMap<String, u32> = HashMap::new(); // Pour garder une trace des tentatives de redémarrage
+
     loop {
+        let mut to_remove = vec![]; // Liste des processus à supprimer
         {
             let processes = procs.lock().unwrap();
             let processes_guard = processes.processes.lock().unwrap();
@@ -172,15 +193,67 @@ fn check_process_status(procs: Arc<Mutex<Procs>>) {
                     if child.try_wait().unwrap().is_some() {
                         let mut status_guard = status.lock().unwrap();
                         status_guard.state = String::from("STOPPED");
+
+                        let basename = remove_last_suffix(&name);
+                        if let Some(program) = processes.config.programs.get(basename) {
+                            let retry_count = retry_counts.entry(name.clone()).or_insert(0);
+
+                            match program.autorestart.as_str() {
+                                "true" => {
+                                    if *retry_count < program.startretries {
+                                        eprintln!("Process {} exited, restarting...", name);
+                                        // Redémarrer le processus
+                                        if let Err(e) = start_process(basename.to_string(), program.clone(), status.clone(), processes.processes.clone()) {
+                                            eprintln!("Failed to restart process {}: {:?}", name, e);
+                                        }
+                                        *retry_count += 1;
+                                    } else {
+                                        eprintln!("Process {} reached max restart attempts", name);
+                                        retry_counts.remove(name);
+                                        to_remove.push(name.clone()); // Ajouter à la liste de suppression
+                                    }
+                                }
+                                "unexpected" => {
+                                    let exit_code = child.wait().unwrap().code().unwrap_or(1);
+                                    if !program.exitcodes.contains(&exit_code) {
+                                        if *retry_count < program.startretries {
+                                            eprintln!("Process {} exited unexpectedly with code {}, restarting...", name, exit_code);
+                                            // Redémarrer le processus
+                                            if let Err(e) = start_process(basename.to_string(), program.clone(), status.clone(), processes.processes.clone()) {
+                                                eprintln!("Failed to restart process {}: {:?}", name, e);
+                                            }
+                                            *retry_count += 1;
+                                        } else {
+                                            eprintln!("Process {} reached max restart attempts", name);
+                                            retry_counts.remove(name);
+                                            to_remove.push(name.clone()); // Ajouter à la liste de suppression
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    retry_counts.remove(name);
+                                    to_remove.push(name.clone()); // Ajouter à la liste de suppression
+                                }
+                            }
+                            thread::sleep(Duration::from_secs(program.starttime as u64));
+                        }
                     }
                 }
             }
         }
+
+        // Supprimer les processus de la liste de surveillance en dehors de la boucle
+        if !to_remove.is_empty() {
+            let processes = procs.lock().unwrap();
+            let mut processes_guard = processes.processes.lock().unwrap();
+            for name in to_remove {
+                processes_guard.remove(&name);
+            }
+        }
+
         thread::sleep(Duration::from_secs(5));
     }
 }
-
-
 
 pub fn main_process() {
     "Daemon is Up".logs(LOGFILE, "Daemon");

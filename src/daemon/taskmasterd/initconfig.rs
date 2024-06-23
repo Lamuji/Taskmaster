@@ -6,7 +6,7 @@
 /*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/04 01:03:01 by jbettini          #+#    #+#             */
-/*   Updated: 2024/06/21 02:06:12 by ramzi            ###   ########.fr       */
+/*   Updated: 2024/06/23 17:22:34 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ pub struct Status {
     pub start_time: Option<DateTime<Local>>,
     pub child: Option<Arc<Mutex<process::Child>>>,
     pub pid: Option<u32>,
+    pub starttime: Option<u32>
 }
 
 impl Status {
@@ -61,6 +62,7 @@ impl Status {
             start_time: None,
             child: None,
             pid: None,
+            starttime: None
         }
     }
 }
