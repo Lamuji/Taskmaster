@@ -6,15 +6,15 @@
 /*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/19 16:46:03 by ramzi             #+#    #+#             */
-/*   Updated: 2024/06/21 01:17:18 by ramzi            ###   ########.fr       */
+/*   Updated: 2024/07/13 17:53:38 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 use std::{process, thread, time::{Duration, SystemTime}};
 
-use crate::daemon::taskmasterd::{command::{LOGFILE, SOCK_PATH}, initconfig::Procs, server::{bidirmsg::BidirectionalMessage, logfile::SaveLog}};
+use nix::libc::{self};
 
-use super::system_time;
+use crate::daemon::taskmasterd::{command::{LOGFILE, SOCK_PATH}, initconfig::{checker::Schecker, Procs}, server::{bidirmsg::BidirectionalMessage, logfile::SaveLog}};
 
 
 pub fn handle_stop(args: Vec<String>, channel: BidirectionalMessage, procs: &mut Procs) {
@@ -26,6 +26,9 @@ pub fn handle_stop(args: Vec<String>, channel: BidirectionalMessage, procs: &mut
     let response = stop_program_internal(args, procs);
     channel.answer(response).unwrap();
 }
+
+use libc::{c_int, kill};
+
 
 pub fn stop_program_internal(args: Vec<String>, procs: &mut Procs) -> String {
     let mut response = String::new();
@@ -50,8 +53,7 @@ pub fn stop_program_internal(args: Vec<String>, procs: &mut Procs) -> String {
             let child_opt = {
                 let mut status_guard = status.lock().unwrap();
                 let child_opt = status_guard.child.take();
-                status_guard.state = String::from("STOPPED");
-                status_guard.start_time = Some(system_time(SystemTime::now()));
+                status_guard.state = String::from("STOPPING");
                 child_opt
             };
 
@@ -63,23 +65,37 @@ pub fn stop_program_internal(args: Vec<String>, procs: &mut Procs) -> String {
                 while attempts < max_attempts {
                     match child_arc.try_lock() {
                         Ok(mut child) => {
-                            match child.kill() {
-                                Ok(_) => {
-                                    let STOPPED = child.wait().is_ok();
-                                    if STOPPED {
-                                        response.push_str(&format!("Program {} stopped.\n", instance_name));
-                                    } else {
-                                        response.push_str(&format!("Failed to stop program {}: still running.\n", instance_name));
-                                    }
-                                    locked = true;
-                                    break;
-                                },
-                                Err(e) => {
-                                    response.push_str(&format!("Failed to stop program {}: {}\n", instance_name, e));
-                                    locked = true;
-                                    break;
-                                },
+                            let stopsignal = procs.config.programs.get(&arg).unwrap().stopsignal.clone();
+                            let stoptime = procs.config.programs.get(&arg).unwrap().stoptime;
+                            let pid = child.id() as c_int;
+                            let signal = match stopsignal.as_str() {
+                                "TERM" => libc::SIGTERM,
+                                "HUP" => libc::SIGHUP,
+                                "INT" => libc::SIGINT,
+                                "QUIT" => libc::SIGQUIT,
+                                "KILL" => libc::SIGKILL,
+                                "USR1" => libc::SIGUSR1,
+                                "USR2" => libc::SIGUSR2,
+                                _ => {
+                                    let mut invalid_signal = stopsignal.clone();
+                                    invalid_signal.check_stopsignal();
+                                    unreachable!()
+                                }
+                            };
+                            unsafe {
+                                kill(pid, signal);
                             }
+                            thread::sleep(Duration::from_secs(stoptime.into()));
+                            if child.try_wait().is_err() {
+                                unsafe {
+                                    kill(pid, libc::SIGKILL);
+                                }
+                                response.push_str(&format!("Program {} failed to stop within {} seconds, sending SIGKILL\n", instance_name, stoptime));
+                            } else {
+                                response.push_str(&format!("Program {} stopped\n", instance_name));
+                            }
+                            locked = true;
+                            break;
                         },
                         Err(_) => {
                             attempts += 1;
@@ -98,6 +114,7 @@ pub fn stop_program_internal(args: Vec<String>, procs: &mut Procs) -> String {
     }
     response
 }
+
 
 
 

@@ -1,14 +1,14 @@
 # programs:
 #   nginx:
-#     cmd: "/usr/local/bin/nginx -c /etc/nginx/test.conf"
-#     workingdir: "/tmp   "
+#     cmd: "/usr/local/bin/nginx -c /etc/nginnnnnnnnnnnnnx/test.conf"
+#     workingdir: "/tmp   
 
 programs:
   test:
     cmd: "./test"
     args: 
     numprocs: 1
-    umask: 035
+    umask: "022"
     workingdir: /home/ramzi/Desktop/Taskmaster/
     autostart: false
     autorestart: "false"
@@ -26,7 +26,7 @@ programs:
     cmd: "echo"
     args: ["Hello"]
     numprocs: 1
-    umask: 033
+    umask: 077
     workingdir: "/tmp"
     autostart: false
     autorestart: "false"
@@ -44,16 +44,16 @@ programs:
   simple_script:
     cmd: "python3"
     args: ["test.py"]
-    numprocs: 4
-    umask: 044
+    numprocs: 1
+    umask: 022
     workingdir: "."
-    autostart: false
+    autostart: true
     autorestart: "unexpected"
     exitcodes: [0]
     startretries: 3
     starttime: 3
-    stopsignal: "TERM"
-    stoptime: 3
+    stopsignal: USR1
+    stoptime: 4
     stdout: "/home/ramzi/Desktop/Taskmaster/simple_script1.stdout"
     stderr: "tmp/simple_script.stderr"
     env:

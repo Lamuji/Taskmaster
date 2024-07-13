@@ -6,7 +6,7 @@
 /*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/26 05:06:43 by jbettini          #+#    #+#             */
-/*   Updated: 2024/06/23 18:24:41 by ramzi            ###   ########.fr       */
+/*   Updated: 2024/07/12 23:04:57 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,8 @@ use std::{collections::HashMap, fs::File, process::{self, Stdio}, sync::{mpsc::{
 
 use crate::daemon::taskmasterd::{initconfig::{Procs, Status}, server::bidirmsg::BidirectionalMessage};
 use chrono::{DateTime, Local, Utc};
+use libc::{umask, mode_t};
+use nix::libc;
 use reload::handle_reload;
 use restart::handle_restart;
 use serde::{Serialize, Deserialize};
@@ -33,7 +35,7 @@ use start::handle_start;
 use status::handle_status;
 use stop::handle_stop;
 
-use super::{initconfig::{get_config, parsing::ProgramConfig}, server::{self, logfile::SaveLog}};
+use super::{initconfig::{checker::ToUmask, get_config, parsing::ProgramConfig}, server::{self, logfile::SaveLog}};
 
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -76,7 +78,7 @@ fn start_process(
     for i in 0..program_config.numprocs {
         let instance_name = format!("{}_{}", name, i + 1);
         let status_clone = Arc::new(Mutex::new(Status::new(instance_name.clone(), String::from("starting"))));
-        let program_config_clone = program_config.clone();
+        let mut program_config_clone = program_config.clone();
         let processes_clone = processes.clone();
         let startretries = program_config.startretries;
         let starttime = program_config.starttime;
@@ -84,6 +86,15 @@ fn start_process(
         thread::spawn(move || {
             let mut attempts = 1;
             let mut started = false;
+
+             // Convert the umask string to a Umask struct
+             let  umask_struct = program_config_clone.umask.to_umask();
+
+             // Set the umask
+             let old_umask = unsafe { umask((umask_struct.owner << 6) | (umask_struct.group << 3) | umask_struct.others) };
+ 
+             // Rest of the function...
+
 
             while attempts <= startretries {
                 let start_time = SystemTime::now();
@@ -148,7 +159,9 @@ fn start_process(
                 drop(status_guard);
                 thread::sleep(Duration::from_secs(1));
             }
+            unsafe { umask(old_umask) };
         });
+        // Restore the umask
     }
     Ok(())
 }

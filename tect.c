@@ -1,7 +1,11 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 
 int main() {
-    printf("This program will fail intentionally.\n");
-    return 1; // Return a non-zero exit code to indicate failure
+    for(int i = 0; i < 10; i++) {
+        printf("This program will fail intentionally.\n");
+        sleep(2);
+    }
+    return 0;
 }

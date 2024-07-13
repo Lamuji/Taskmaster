@@ -6,45 +6,21 @@
 /*   By: ramzi <ramzi@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/05 22:12:50 by jbettini          #+#    #+#             */
-/*   Updated: 2024/06/23 15:13:32 by ramzi            ###   ########.fr       */
+/*   Updated: 2024/07/13 17:34:10 by ramzi            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 use core::panic;
 use std::vec::Vec;
 
-const SIGNAL_NAMES: [&'static str; 33] = [
+const SIGNAL_NAMES: [&'static str; 9] = [
     "NONE",
     "HUP",
     "INT",
     "QUIT",
-    "ILL",
-    "TRAP",
-    "ABRT",
-    "EMT",
-    "FPE",
     "KILL",
-    "BUS",
-    "SEGV",
-    "SYS",
-    "PIPE",
-    "ALRM",
     "TERM",
-    "URG",
     "STOP",
-    "TSTP",
-    "CONT",
-    "CHLD",
-    "TTIN",
-    "TTOU",
-    "IO",
-    "XCPU",
-    "XFSZ",
-    "VTALRM",
-    "PROF",
-    "WINCH",
-    "LOST",
-    "PWR",
     "USR1",
     "USR2",
 ];
@@ -100,13 +76,13 @@ impl Uchecker for u32 {
 }
 
 pub struct Umask {
-    owner: u8,
-    group: u8,
-    others: u8,
+    pub owner: u32,
+    pub group: u32,
+    pub others: u32,
 }
 
 impl Umask {
-    pub fn new(owner: u8, group: u8, others: u8) -> Umask {
+    pub fn new(owner: u32, group: u32, others: u32) -> Umask {
         Umask {
             owner,
             group,
@@ -116,15 +92,15 @@ impl Umask {
 }
 
 pub trait ToUmask {
-    fn to_umask(& mut self) -> Umask;
+     fn to_umask(& mut self) -> Umask;
 }
 
 impl ToUmask for String {
-    fn to_umask(& mut self) -> Umask {
+     fn to_umask(& mut self) -> Umask {
         self.check_umask();
-        let mut tmp: Vec<u8> = Vec::new();
+        let mut tmp: Vec<u32> = Vec::new();
         for val in self.chars() {
-            let val_u8: u8 = val.to_string().parse().unwrap();
+            let val_u8: u32 = val.to_string().parse().unwrap();
             tmp.push(val_u8);
         }
         Umask::new(
